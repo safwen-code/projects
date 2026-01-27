@@ -35,13 +35,11 @@
   <script>
     $(() => {
       console.log('hello')
-      $('#send').on(
-        ('click',
-        (e) => {
-          e.preventDefault()
-          addmessage({ name: 'saf', message: 'dje' })
-        }),
-      )
+      $('#send').on('click', (e) => {
+        e.preventDefault()
+        console.log('hi')
+        addmessage({ name: 'saf', message: 'dje' })
+      })
     })
     function addmessage(arg) {
       $('#Message').append(`<h4>${arg.name}</h4><p>${arg.message}</p>`)
