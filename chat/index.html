@@ -19,15 +19,32 @@
 
           <form>
             <div class="mb-3">
-              <input type="text" class="form-control" placeholder="Name" />
+              <input type="text" class="form-control" placeholder="Message" />
             </div>
 
-            <button type="submit" class="btn btn-success">
+            <button type="submit" class="btn btn-success" id="send">
               Send
             </button>
+            <div id="Message"></div>
           </form>
         </div>
       </div>
     </div>
   </body>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script>
+    $(() => {
+      console.log('hello')
+      $('#send').on(
+        ('click',
+        (e) => {
+          e.preventDefault()
+          addmessage({ name: 'saf', message: 'dje' })
+        }),
+      )
+    })
+    function addmessage(arg) {
+      $('#Message').append(`<h4>${arg.name}</h4><p>${arg.message}</p>`)
+    }
+  </script>
 </html>
