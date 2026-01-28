@@ -2,54 +2,76 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Send Message</title>
+    <title>Chat</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Bootstrap 5 CDN -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+
+    <script src="/socket.io/socket.io.js"></script>
   </head>
+
   <body class="bg-light">
     <div class="container mt-5">
       <div class="card shadow-sm">
-        <div class="card-body bg-light">
+        <div class="card-body">
           <h3 class="mb-4">Send Message</h3>
 
-          <form>
-            <div class="mb-3">
-              <input type="text" class="form-control" placeholder="Message" />
-            </div>
+          <div class="mb-3">
+            <input id="text" class="form-control" placeholder="Message" />
+          </div>
 
-            <button type="submit" class="btn btn-success" id="send">
-              Send
-            </button>
-            <div id="Message"></div>
-          </form>
+          <button id="send" class="btn btn-success">Send</button>
+
+          <hr />
+          <div id="messages"></div>
         </div>
       </div>
     </div>
-  </body>
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script>
-    $(() => {
-      console.log('hello')
-      $('#send').on(
-        ('click',
-        (e) => {
-          e.preventDefault()
-          addmessage({ name: 'saf', message: 'dje' })
-        }),
-      )
-      $('#send').on('click', (e) => {
-        e.preventDefault()
-        console.log('hi')
-        addmessage({ name: 'saf', message: 'dje' })
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <script>
+      const socket = io()
+
+      // get message
+      function loadMessages() {
+        $.get('/message', function (data) {
+          $('#messages').empty()
+          console.log('get message', data)
+          data.forEach((msg) => {
+            addMessage(msg)
+          })
+        })
+      }
+
+      // POST message
+      $('#send').on('click', function () {
+        const text = $('#text').val().trim()
+        if (!text) return
+
+        $.post('/message', { text })
+        $('#text').val('')
       })
-    })
-    function addmessage(arg) {
-      $('#Message').append(`<h4>${arg.name}</h4><p>${arg.message}</p>`)
-    }
-  </script>
+
+      //  get new message
+      socket.on('message:new', function (msg) {
+        addMessage(msg)
+      })
+
+      // add text to ui
+      function addMessage(msg) {
+        $('#messages').append(`
+        <div class="alert alert-secondary mt-2">
+          ${msg}
+        </div>
+      `)
+      }
+
+      // load get message
+      loadMessages()
+    </script>
+  </body>
 </html>
