@@ -34,20 +34,17 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script>
-      const socket = io()
+      const socket = io('http://localhost:5000')
 
-      // get message
       function loadMessages() {
         $.get('/message', function (data) {
           $('#messages').empty()
-          console.log('get message', data)
           data.forEach((msg) => {
-            addMessage(msg)
+            addMessage(msg.text)
           })
         })
       }
 
-      // POST message
       $('#send').on('click', function () {
         const text = $('#text').val().trim()
         if (!text) return
@@ -56,21 +53,18 @@
         $('#text').val('')
       })
 
-      //  get new message
       socket.on('message:new', function (msg) {
-        addMessage(msg)
+        addMessage(msg.text)
       })
 
-      // add text to ui
-      function addMessage(msg) {
+      function addMessage(text) {
         $('#messages').append(`
-        <div class="alert alert-secondary mt-2">
-          ${msg}
-        </div>
-      `)
+      <div class="alert alert-secondary mt-2">
+        ${text}
+      </div>
+    `)
       }
 
-      // load get message
       loadMessages()
     </script>
   </body>
