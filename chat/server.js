@@ -1,6 +1,10 @@
 const express = require('express')
 const app = express()
+const Message = require('./MessageSchema')
 
+const dbconnect = require('./dbconnect')
+
+dbconnect()
 // Create http server
 const http = require('http').createServer(app)
 //relate socket with server
@@ -21,19 +25,23 @@ io.on('connection', (socket) => {
   })
 })
 
-var message = []
 //get message
-app.get('/message', (req, res) => {
-  res.send(message)
+app.get('/message', async (req, res) => {
+  const msg = await Message.find({})
+  res.json(msg)
 })
 
 //post message
-app.post('/message', (req, res) => {
+app.post('/message', async (req, res) => {
   const { text } = req.body
+
   if (text) {
-    message.push(text)
+    //save data
+    const newMsg = new Message({ text })
+    await newMsg.save()
+
     //send message to all user
-    io.emit('message:new', text)
+    io.emit('message:new', newMsg)
     res.sendStatus(200)
   }
 })
