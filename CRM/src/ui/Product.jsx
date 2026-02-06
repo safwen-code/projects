@@ -1,173 +1,138 @@
-import { Box, Button, Stack, Typography } from '@mui/material'
-import DataGrid, {
-  Column,
-  Editing,
-  Paging,
-  Selection,
-  Export,
-  Toolbar,
-  Item,
-} from 'devextreme-react/data-grid'
-
-import { useAppDispatch, useAppSelector } from '../app/hooks.js'
+// import { setSelectedProducts } from '../Reducer/invoice/invoiceSlice.js'
+// import { useNavigate } from 'react-router-dom'
+import { useMemo } from 'react'
+import { AgGridReact } from 'ag-grid-react'
 import {
-  addProduct,
-  updateProduct,
-  deleteProduct,
-} from '../Reducer/products/productsSlice.js'
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Stack,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material'
 
-import { setSelectedProducts } from '../Reducer/invoice/invoiceSlice.js'
-import { useNavigate } from 'react-router-dom'
-
-// Excel / PDF Export (DevExtreme official)
-import { exportDataGrid as exportDataGridToExcel } from 'devextreme/excel_exporter'
-import { exportDataGrid as exportDataGridToPdf } from 'devextreme/pdf_exporter'
-
-import ExcelJS from 'exceljs'
-import saveAs from 'file-saver'
-import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import { fakeProducts } from '../util/fakeProducts'
 
 const Product = () => {
-  const products = useAppSelector((s) => s.products.list)
-  const dispatch = useAppDispatch()
-  const nav = useNavigate()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-  // ---------------------------
-  // CRUD HANDLERS
-  // ---------------------------
+  // ----------------------------
+  // Convert date format
+  // ----------------------------
+  const formattedData = useMemo(() => {
+    return fakeProducts.map((p) => {
+      const [day, month, year] = p.dateProduction.split('.')
+      return {
+        ...p,
+        jsDate: new Date(`${year}-${month}-${day}`),
+      }
+    })
+  }, [])
 
-  const onRowInserting = (e) => {
-    // DevExtreme default behavior يحاول يضيف للـ dataSource،
-    // وإحنا نحب Redux هو اللي يتحكم => نمنع الإضافة الافتراضية
-    e.cancel = true
-    dispatch(addProduct(e.data))
-  }
+  // ----------------------------
+  // Totals
+  // ----------------------------
+  const totalPlanned = formattedData.reduce((s, p) => s + p.qtyPlanned, 0)
 
-  const onRowUpdating = (e) => {
-    e.cancel = true
-    dispatch(
-      updateProduct({ id: e.key, changes: { ...e.oldData, ...e.newData } }),
-    )
-  }
+  const totalProduced = formattedData.reduce((s, p) => s + p.qtyProduced, 0)
 
-  const onRowRemoving = (e) => {
-    e.cancel = true
-    dispatch(deleteProduct(e.key))
-  }
-
-  const onSelectionChanged = (e) => {
-    dispatch(setSelectedProducts(e.selectedRowKeys))
-  }
-
-  // ---------------------------
-  // EXPORT HANDLER
-  // ---------------------------
-
-  const onExporting = async (e) => {
-    // Excel
-    if (e.format === 'xlsx') {
-      const workbook = new ExcelJS.Workbook()
-      const worksheet = workbook.addWorksheet('Products')
-
-      await exportDataGridToExcel({
-        component: e.component,
-        worksheet,
-        autoFilterEnabled: true,
-      })
-
-      const buffer = await workbook.xlsx.writeBuffer()
-      saveAs(
-        new Blob([buffer], { type: 'application/octet-stream' }),
-        'products.xlsx',
-      )
-      e.cancel = true
-    }
-
-    // PDF
-    if (e.format === 'pdf') {
-      const doc = new jsPDF()
-
-      await exportDataGridToPdf({
-        jsPDFDocument: doc,
-        component: e.component,
-        indent: 5,
-      })
-
-      doc.save('products.pdf')
-      e.cancel = true
-    }
-  }
+  // ----------------------------
+  // Columns
+  // ----------------------------
+  const columnDefs = [
+    {
+      field: 'ref',
+      headerName: 'Référence',
+      flex: 1,
+      filter: true,
+    },
+    {
+      field: 'dateProduction',
+      headerName: 'Date Production',
+      flex: 1,
+    },
+    {
+      field: 'qtyPlanned',
+      headerName: 'Planned',
+      flex: 1,
+    },
+    {
+      field: 'qtyProduced',
+      headerName: 'Produced',
+      flex: 1,
+      cellStyle: (params) => ({
+        color: params.value < params.data.qtyPlanned ? 'orange' : 'green',
+        fontWeight: 600,
+      }),
+    },
+  ]
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-      >
-        <Typography variant="h5" fontWeight={800}>
-          Products
-        </Typography>
+    <Box sx={{ p: isMobile ? 1 : 4 }}>
+      <Typography variant={isMobile ? 'h6' : 'h4'} fontWeight={800} mb={3}>
+        Production Dashboard
+      </Typography>
 
-        <Button variant="contained" onClick={() => nav('/invoice')}>
-          Facture
-        </Button>
+      {/* Summary Cards */}
+      <Stack direction={isMobile ? 'column' : 'row'} spacing={2} mb={3}>
+        <Card sx={{ flex: 1 }}>
+          <CardContent>
+            <Typography variant="body2">Total Planned</Typography>
+            <Typography variant="h5" fontWeight={700}>
+              {totalPlanned.toLocaleString()}
+            </Typography>
+          </CardContent>
+        </Card>
+
+        <Card sx={{ flex: 1 }}>
+          <CardContent>
+            <Typography variant="body2">Total Produced</Typography>
+            <Typography variant="h5" fontWeight={700}>
+              {totalProduced.toLocaleString()}
+            </Typography>
+          </CardContent>
+        </Card>
+
+        <Card sx={{ flex: 1 }}>
+          <CardContent>
+            <Typography variant="body2">Completion %</Typography>
+            <Typography variant="h5" fontWeight={700}>
+              {((totalProduced / totalPlanned) * 100).toFixed(1)}%
+            </Typography>
+          </CardContent>
+        </Card>
       </Stack>
 
-      <DataGrid
-        dataSource={products}
-        keyExpr="id"
-        showBorders
-        columnAutoWidth
-        repaintChangesOnly
-        onSelectionChanged={onSelectionChanged}
-        onExporting={onExporting}
-        // CRUD events
-        onRowInserting={onRowInserting}
-        onRowUpdating={onRowUpdating}
-        onRowRemoving={onRowRemoving}
-      >
-        <Selection mode="multiple" />
-        <Paging defaultPageSize={10} />
-
-        <Editing
-          mode="row"
-          allowAdding
-          allowUpdating
-          allowDeleting
-          useIcons
-          confirmDeleteMessage="هل أنت متأكد من حذف هذا المنتج؟"
-        />
-
-        {/* Export formats */}
-        <Export enabled allowExportSelectedData formats={['xlsx', 'pdf']} />
-
-        <Toolbar>
-          <Item name="addRowButton" />
-          <Item name="exportButton" />
-          <Item location="after">
-            <Typography variant="body2" sx={{ opacity: 0.7 }}>
-              اختر المنتجات ثم اضغط Facture
-            </Typography>
-          </Item>
-        </Toolbar>
-
-        <Column dataField="ref" caption="Réf Produit" />
-        <Column dataField="dateProduction" caption="Date de production" />
-        <Column
-          dataField="qtyPlanned"
-          caption="Quantité planifiée"
-          dataType="number"
-        />
-        <Column
-          dataField="qtyProduced"
-          caption="Quantité produite"
-          dataType="number"
-        />
-        <Column dataField="com" caption="COM" />
-      </DataGrid>
+      {/* Grid */}
+      <Card>
+        <CardContent>
+          <div
+            className="ag-theme-alpine"
+            style={{
+              height: isMobile ? 400 : 500,
+              width: '100%',
+            }}
+          >
+            <AgGridReact
+              theme="legacy"
+              rowData={formattedData}
+              columnDefs={columnDefs}
+              pagination={true}
+              paginationPageSize={5}
+              paginationPageSizeSelector={[5, 10, 20]}
+              animateRows={true}
+              defaultColDef={{
+                sortable: true,
+                resizable: true,
+                filter: true,
+                floatingFilter: true,
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
     </Box>
   )
 }
