@@ -1,181 +1,171 @@
-import { useMemo, useState, useCallback, useRef } from 'react'
-import { AgGridReact } from 'ag-grid-react'
+import { useState, useMemo } from 'react'
 import {
   Box,
-  Card,
-  CardContent,
-  Typography,
-  Stack,
   Button,
+  Stack,
+  TextField,
+  Paper,
   useTheme,
   useMediaQuery,
 } from '@mui/material'
-import { fakeProducts } from '../util/fakeProducts'
-import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
+import { DataGrid } from '@mui/x-data-grid'
+import { Add, Delete, PictureAsPdf } from '@mui/icons-material'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
-ModuleRegistry.registerModules([AllCommunityModule])
-import 'ag-grid-community/styles/ag-grid.css'
-import 'ag-grid-community/styles/ag-theme-alpine.css'
-
-const Product = () => {
+const ProductGridMUI = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  const gridRef = useRef()
 
-  const [rowData, setRowData] = useState(
-    fakeProducts.map((p) => {
-      const [day, month, year] = p.dateProduction.split('.')
-      return { ...p, jsDate: new Date(`${year}-${month}-${day}`) }
-    }),
-  )
+  const [rows, setRows] = useState([
+    { id: 1, client: 'Ali', product: 'Coffee Machine', qty: 2, price: 1200 },
+    { id: 2, client: 'Sami', product: 'Grinder', qty: 1, price: 400 },
+  ])
 
-  const totalPlanned = useMemo(
-    () => rowData.reduce((s, p) => s + p.qtyPlanned, 0),
-    [rowData],
-  )
-  const totalProduced = useMemo(
-    () => rowData.reduce((s, p) => s + p.qtyProduced, 0),
-    [rowData],
-  )
+  const [selectionModel, setSelectionModel] = useState([])
+  const [search, setSearch] = useState('')
 
-  const onCellValueChanged = useCallback((params) => {
-    setRowData((prev) =>
-      prev.map((r) => (r.id === params.data.id ? params.data : r)),
+  const filteredRows = useMemo(() => {
+    return rows.filter((row) =>
+      Object.values(row).join(' ').toLowerCase().includes(search.toLowerCase()),
     )
-  }, [])
+  }, [rows, search])
 
-  const handleAdd = () => {
-    const newItem = {
-      id: Date.now(),
-      ref: '',
-      dateProduction: '',
-      qtyPlanned: 0,
-      qtyProduced: 0,
-      com: '',
-      jsDate: new Date(),
-    }
-    setRowData((prev) => [newItem, ...prev])
-    gridRef.current?.api?.ensureIndexVisible(0)
-  }
-
-  const deleteRenderer = (params) => (
-    <Button
-      color="error"
-      size="small"
-      onClick={() =>
-        setRowData((prev) => prev.filter((r) => r.id !== params.data.id))
-      }
-    >
-      Delete
-    </Button>
-  )
-
-  const columnDefs = [
-    { field: 'ref', headerName: 'Référence', flex: 1, editable: true },
+  const columns = [
+    { field: 'client', headerName: 'Client', flex: 1, editable: true },
+    { field: 'product', headerName: 'Product', flex: 1, editable: true },
     {
-      field: 'dateProduction',
-      headerName: 'Date Production',
+      field: 'qty',
+      headerName: 'Qty',
       flex: 1,
       editable: true,
+      type: 'number',
     },
-    { field: 'qtyPlanned', headerName: 'Planned', flex: 1, editable: true },
     {
-      field: 'qtyProduced',
-      headerName: 'Produced',
+      field: 'price',
+      headerName: 'Price',
       flex: 1,
       editable: true,
-      cellStyle: (params) => ({
-        color: params.value < params.data.qtyPlanned ? 'orange' : 'green',
-        fontWeight: 600,
-      }),
+      type: 'number',
     },
-    { field: 'com', headerName: 'COM', flex: 1, editable: true },
     {
+      field: 'actions',
       headerName: 'Actions',
-      cellRenderer: deleteRenderer,
-      flex: 1,
-      maxWidth: 120,
+      width: 120,
+      renderCell: (params) => (
+        <Button
+          color="error"
+          size="small"
+          startIcon={<Delete />}
+          onClick={() =>
+            setRows((prev) => prev.filter((r) => r.id !== params.row.id))
+          }
+        >
+          Delete
+        </Button>
+      ),
     },
   ]
 
+  const handleAdd = () => {
+    setRows((prev) => [
+      {
+        id: Date.now(),
+        client: '',
+        product: '',
+        qty: 0,
+        price: 0,
+      },
+      ...prev,
+    ])
+  }
+
+  const handleExportPdf = () => {
+    const selectedRows = rows.filter((r) => selectionModel.includes(r.id))
+
+    if (!selectedRows.length) return alert('Select rows first')
+
+    const doc = new jsPDF()
+    doc.text('Client Report', 14, 15)
+
+    autoTable(doc, {
+      startY: 20,
+      head: [['Client', 'Product', 'Qty', 'Price']],
+      body: selectedRows.map((r) => [r.client, r.product, r.qty, r.price]),
+    })
+
+    doc.save('report.pdf')
+  }
+
   return (
-    <Box
-      sx={{
-        p: isMobile ? 1 : 4,
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <Typography variant={isMobile ? 'h6' : 'h4'} fontWeight={800} mb={3}>
-        Production Dashboard
-      </Typography>
-
-      {/* Summary */}
-      <Stack direction={isMobile ? 'column' : 'row'} spacing={2} mb={3}>
-        <Card sx={{ flex: 1 }}>
-          <CardContent>
-            <Typography variant="body2">Total Planned</Typography>
-            <Typography variant="h5" fontWeight={700}>
-              {totalPlanned.toLocaleString()}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ flex: 1 }}>
-          <CardContent>
-            <Typography variant="body2">Total Produced</Typography>
-            <Typography variant="h5" fontWeight={700}>
-              {totalProduced.toLocaleString()}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ flex: 1 }}>
-          <CardContent>
-            <Typography variant="body2">Completion %</Typography>
-            <Typography variant="h5" fontWeight={700}>
-              {((totalProduced / totalPlanned) * 100).toFixed(1)}%
-            </Typography>
-          </CardContent>
-        </Card>
-      </Stack>
-
-      <Stack direction="row" mb={2}>
-        <Button variant="contained" onClick={handleAdd}>
-          Add Product
-        </Button>
-      </Stack>
-
-      {/* Grid */}
-      {/* Grid */}
-      <Box sx={{ flex: 1, minHeight: 0 }}>
-        <div
-          className="ag-theme-alpine"
-          style={{ height: '100%', width: '100%' }}
+    <Box sx={{ height: '100vh', p: isMobile ? 1 : 3, bgcolor: '#f4f6f8' }}>
+      <Paper
+        elevation={3}
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 3,
+          overflow: 'hidden',
+        }}
+      >
+        {/* ✅ Toolbar عادي بدون GridToolbarContainer */}
+        <Stack
+          direction={isMobile ? 'column' : 'row'}
+          spacing={2}
+          sx={{ p: 2 }}
+          justifyContent="space-between"
         >
-          <AgGridReact
-            ref={gridRef}
-            theme="legacy"
-            rowData={rowData}
-            columnDefs={columnDefs}
-            pagination={true}
-            paginationPageSize={10}
-            animateRows={true}
-            defaultColDef={{
-              sortable: true,
-              resizable: true,
-              filter: true,
-              floatingFilter: true,
-              editable: true,
-            }}
-            editType="fullRow"
-            onCellValueChanged={onCellValueChanged}
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" startIcon={<Add />} onClick={handleAdd}>
+              Add
+            </Button>
+
+            <Button
+              variant="outlined"
+              startIcon={<PictureAsPdf />}
+              onClick={handleExportPdf}
+            >
+              Export PDF
+            </Button>
+          </Stack>
+
+          <TextField
+            size="small"
+            label="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            sx={{ minWidth: 250 }}
           />
-        </div>
-      </Box>
+        </Stack>
+
+        <Box sx={{ flex: 1 }}>
+          <DataGrid
+            rows={filteredRows}
+            columns={columns}
+            pageSizeOptions={[5, 10, 20]}
+            initialState={{
+              pagination: {
+                paginationModel: { pageSize: 10, page: 0 },
+              },
+            }}
+            checkboxSelection
+            disableRowSelectionOnClick
+            onRowSelectionModelChange={(newSelection) =>
+              setSelectionModel(newSelection)
+            }
+            sx={{
+              border: 'none',
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: '#f0f2f5',
+                fontWeight: 'bold',
+              },
+            }}
+          />
+        </Box>
+      </Paper>
     </Box>
   )
 }
 
-export default Product
+export default ProductGridMUI
