@@ -8,6 +8,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material'
+import { DataGrid, GridRowModes, GridActionsCellItem } from '@mui/x-data-grid'
 import {
   Edit,
   Save,
@@ -17,7 +18,6 @@ import {
   PictureAsPdf,
 } from '@mui/icons-material'
 import autoTable from 'jspdf-autotable'
-import { DataGrid, GridRowModes, GridActionsCellItem } from '@mui/x-data-grid'
 import jsPDF from 'jspdf'
 
 import { useAppSelector } from '../app/hooks'
@@ -27,13 +27,8 @@ const ProductGridMUI = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const products = useAppSelector((state) => state.products.listPrd)
-  console.log(products)
 
-  // const dispatch = useDispatch()
-  const [rows, setRows] = useState([
-    { id: 1, client: 'Ali', product: 'Coffee Machine', qty: 2, price: 1200 },
-    { id: 2, client: 'Sami', product: 'Grinder', qty: 1, price: 400 },
-  ])
+  const [rows, setRows] = useState(products)
 
   const [rowModesModel, setRowModesModel] = useState({})
 
@@ -178,6 +173,15 @@ const ProductGridMUI = () => {
       },
       ...prev,
     ])
+    const id = Date.now()
+    setRows((prev) => [
+      { id, client: '', product: '', qty: 0, price: 0 },
+      ...prev,
+    ])
+    setRowModesModel((prev) => ({
+      ...prev,
+      [id]: { mode: GridRowModes.Edit },
+    }))
   }
 
   const handleExportPdf = () => {
