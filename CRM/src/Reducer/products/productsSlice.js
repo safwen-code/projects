@@ -3,6 +3,7 @@ import { fakeProducts } from '../../util/fakeProducts'
 
 const initialState = {
   list: fakeProducts,
+  listPrd: fakeProducts,
 }
 
 const productsSlice = createSlice({
