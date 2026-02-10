@@ -82,43 +82,29 @@ const ProductGridMUI = () => {
   }
 
   const columns = [
-    { field: 'client', headerName: 'Client', flex: 1, editable: true },
-    { field: 'product', headerName: 'Product', flex: 1, editable: true },
+    { field: 'id', headerName: 'ID', flex: 1 },
+    { field: 'ref', headerName: 'Ref', flex: 1, editable: true },
     {
-      field: 'qty',
-      headerName: 'Qty',
+      field: 'dateProduction',
+      headerName: 'dateProduction',
+      flex: 1,
+      editable: true,
+    },
+    {
+      field: 'qtyPlanned',
+      headerName: 'qtyPlanned',
       flex: 1,
       editable: true,
       type: 'number',
     },
     {
-      field: 'price',
-      headerName: 'Price',
+      field: 'qtyProduced',
+      headerName: 'qtyProduced',
       flex: 1,
       editable: true,
       type: 'number',
     },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      width: 120,
-      renderCell: (params) => (
-        <Button
-          color="error"
-          size="small"
-          startIcon={<Delete />}
-          onClick={() =>
-            setRows((prev) => prev.filter((r) => r.id !== params.row.id))
-          }
-        >
-          Delete
-        </Button>
-      ),
-      type: 'number',
-      flex: 1,
-      editable: true,
-    },
-
+    { field: 'com', headerName: 'Commentaire', flex: 1, editable: true },
     {
       field: 'actions',
       type: 'actions',
@@ -163,21 +149,19 @@ const ProductGridMUI = () => {
   ]
 
   const handleAdd = () => {
+    const id = Date.now()
+
     setRows((prev) => [
       {
-        id: Date.now(),
-        client: '',
-        product: '',
-        qty: 0,
-        price: 0,
+        id,
+        ref: '',
+        dateProduction: '',
+        qtyPlanned: 0,
+        qtyProduced: 0,
       },
       ...prev,
     ])
-    const id = Date.now()
-    setRows((prev) => [
-      { id, client: '', product: '', qty: 0, price: 0 },
-      ...prev,
-    ])
+
     setRowModesModel((prev) => ({
       ...prev,
       [id]: { mode: GridRowModes.Edit },
@@ -197,8 +181,17 @@ const ProductGridMUI = () => {
 
     autoTable(doc, {
       startY: 20,
-      head: [['Client', 'Product', 'Qty', 'Price']],
-      body: selectedRows.map((r) => [r.client, r.product, r.qty, r.price]),
+      head: [
+        ['ID', 'Ref', 'Date Production', 'qtyPlanned', 'qtyProduced', 'com'],
+      ],
+      body: selectedRows.map((r) => [
+        r.id,
+        r.ref,
+        r.dateProduction,
+        r.qtyPlanned,
+        r.qtyProduced,
+        r.com,
+      ]),
     })
 
     doc.save('report.pdf')
