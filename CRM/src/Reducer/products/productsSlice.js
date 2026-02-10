@@ -2,7 +2,6 @@ import { createSlice, nanoid } from '@reduxjs/toolkit'
 import { fakeProducts } from '../../util/fakeProducts'
 
 const initialState = {
-  list: fakeProducts,
   listPrd: fakeProducts,
 }
 
@@ -12,7 +11,7 @@ const productsSlice = createSlice({
   reducers: {
     addProduct: {
       reducer: (state, action) => {
-        state.list.unshift(action.payload)
+        state.listPrd.unshift(action.payload)
       },
       prepare: (data) => ({
         payload: {
@@ -27,16 +26,16 @@ const productsSlice = createSlice({
     },
 
     updateProduct: (state, action) => {
-      const { id, changes } = action.payload
-      const idx = state.list.findIndex((p) => p.id === id)
-      if (idx !== -1) {
-        state.list[idx] = { ...state.list[idx], ...changes }
+      const { id, ...changes } = action.payload // تأكد من إرسال البيانات بشكل صحيح
+      const existingProduct = state.listPrd.find((p) => p.id === id)
+      if (existingProduct) {
+        Object.assign(existingProduct, changes)
       }
     },
 
     deleteProduct: (state, action) => {
       const id = action.payload
-      state.list = state.list.filter((p) => p.id !== id)
+      state.listPrd = state.listPrd.filter((p) => p.id !== id)
     },
   },
 })
