@@ -17,16 +17,18 @@ import {
   Delete,
   PictureAsPdf,
 } from '@mui/icons-material'
-import autoTable from 'jspdf-autotable'
-import jsPDF from 'jspdf'
 
-import { useAppSelector } from '../app/hooks'
-// import { useDispatch } from 'react-redux'
+import { useAppDispatch, useAppSelector } from '../app/hooks'
+import { useNavigate } from 'react-router-dom'
+import { setSelectedProducts } from '../Reducer/invoice/invoiceSlice'
 
 const ProductGridMUI = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const products = useAppSelector((state) => state.products.listPrd)
+
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
 
   const [rows, setRows] = useState(products)
 
@@ -176,25 +178,8 @@ const ProductGridMUI = () => {
       return
     }
 
-    const doc = new jsPDF()
-    doc.text('Client Report', 14, 15)
-
-    autoTable(doc, {
-      startY: 20,
-      head: [
-        ['ID', 'Ref', 'Date Production', 'qtyPlanned', 'qtyProduced', 'com'],
-      ],
-      body: selectedRows.map((r) => [
-        r.id,
-        r.ref,
-        r.dateProduction,
-        r.qtyPlanned,
-        r.qtyProduced,
-        r.com,
-      ]),
-    })
-
-    doc.save('report.pdf')
+    dispatch(setSelectedProducts(selectedRows))
+    navigate('/invoice')
   }
 
   return (
