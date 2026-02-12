@@ -8,7 +8,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useMemo } from 'react'
 import { useAppDispatch, useAppSelector } from '../app/hooks.js'
 import { setClientInfo } from '../Reducer/invoice/invoiceSlice.js'
 import { generateInvoicePdf } from '../Reducer/invoice/invoicepdf.js'
@@ -19,14 +18,9 @@ const Invoice = () => {
   const dispatch = useAppDispatch()
 
   const invoice = useAppSelector((s) => s.invoice)
-  const products = useAppSelector((s) => s.products.list)
-
-  const selectedItems = useMemo(() => {
-    return products.filter((p) => invoice.selectedProductIds.includes(p.id))
-  }, [products, invoice.selectedProductIds])
 
   const handlePdf = () => {
-    generateInvoicePdf({ invoice, items: selectedItems })
+    generateInvoicePdf({ invoice, items: invoice.selectedProductIds })
   }
 
   return (
@@ -48,7 +42,7 @@ const Invoice = () => {
           <Button
             variant="contained"
             onClick={handlePdf}
-            disabled={selectedItems.length === 0}
+            disabled={invoice.selectedProductIds.length === 0}
           >
             Export PDF
           </Button>
@@ -120,7 +114,7 @@ const Invoice = () => {
             <Box sx={{ flex: 1 }}>
               <Typography fontWeight={800}>Produits sélectionnés :</Typography>
               <Box sx={{ mt: 1 }}>
-                {selectedItems.map((p) => (
+                {invoice.selectedProductIds.map((p) => (
                   <Box
                     key={p.id}
                     sx={{
@@ -137,7 +131,7 @@ const Invoice = () => {
                     </Typography>
                   </Box>
                 ))}
-                {selectedItems.length === 0 && (
+                {invoice.selectedProductIds.length === 0 && (
                   <Typography sx={{ opacity: 0.6 }}>
                     لم يتم اختيار أي منتج من جدول المنتجات.
                   </Typography>
