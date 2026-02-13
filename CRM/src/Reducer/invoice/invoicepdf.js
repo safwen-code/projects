@@ -3,35 +3,72 @@ import autoTable from 'jspdf-autotable'
 
 export function generateInvoicePdf({ invoice, items }) {
   const doc = new jsPDF('p', 'mm', 'a4')
+  const pageWidth = doc.internal.pageSize.getWidth()
 
-  // Header
-  doc.setFontSize(22)
-  doc.text('FACTURE', 105, 18, { align: 'center' })
+  /* ===================================== */
+  /*                HEADER                 */
+  /* ===================================== */
 
-  doc.setFontSize(11)
-  doc.text(`FACTURE N° ${invoice.factureNumber}`, 105, 28, { align: 'center' })
-  doc.text(`DATE : ${invoice.factureDate}`, 105, 34, { align: 'center' })
+  doc.setFontSize(24)
+  doc.setFont(undefined, 'bold')
+  doc.text('FACTURE', pageWidth / 2, 20, { align: 'center' })
 
-  // Seller
-  doc.setFontSize(11)
-  doc.text(invoice.seller.companyName, 14, 45)
-  doc.setFontSize(9)
-  doc.text(invoice.seller.slogan, 14, 50)
-  doc.text(invoice.seller.address, 14, 56)
-  doc.text(invoice.seller.city, 14, 61)
-  doc.text(`Téléphone : ${invoice.seller.phone}`, 14, 66)
+  doc.setFontSize(12)
+  doc.setFont(undefined, 'normal')
+  doc.text(`FACTURE N° ${invoice.factureNumber}`, pageWidth / 2, 28, {
+    align: 'center',
+  })
+  doc.text(`DATE : ${invoice.factureDate}`, pageWidth / 2, 34, {
+    align: 'center',
+  })
 
-  // Client
-  doc.setFontSize(11)
-  doc.text('AUPRES DE :', 14, 78)
+  // Horizontal line
+  doc.setDrawColor(180)
+  doc.line(14, 40, pageWidth - 14, 40)
+
+  /* ===================================== */
+  /*          SELLER & CLIENT BOX          */
+  /* ===================================== */
+
+  const leftX = 14
+  const rightX = pageWidth / 2 + 5
+  const boxWidth = pageWidth / 2 - 20
+  const startY = 50
+  const boxHeight = 40
+
+  // Seller Box
+  doc.rect(leftX, startY, boxWidth, boxHeight)
+
+  doc.setFontSize(12)
+  doc.setFont(undefined, 'bold')
+  doc.text(invoice.seller.companyName, leftX + 4, startY + 8)
+
   doc.setFontSize(10)
-  doc.text(invoice.client.name, 14, 84)
-  doc.text(invoice.client.company, 14, 89)
-  doc.text(invoice.client.address, 14, 94)
-  doc.text(invoice.client.city, 14, 99)
-  doc.text(`Téléphone : ${invoice.client.phone}`, 14, 104)
+  doc.setFont(undefined, 'normal')
+  doc.text(invoice.seller.slogan, leftX + 4, startY + 14)
+  doc.text(invoice.seller.address, leftX + 4, startY + 20)
+  doc.text(invoice.seller.city, leftX + 4, startY + 26)
+  doc.text(`Téléphone : ${invoice.seller.phone}`, leftX + 4, startY + 32)
 
-  // Table
+  // Client Box
+  doc.rect(rightX, startY, boxWidth, boxHeight)
+
+  doc.setFontSize(11)
+  doc.setFont(undefined, 'bold')
+  doc.text('AUPRES DE :', rightX + 4, startY + 8)
+
+  doc.setFontSize(10)
+  doc.setFont(undefined, 'normal')
+  doc.text(invoice.client.name, rightX + 4, startY + 14)
+  doc.text(invoice.client.company, rightX + 4, startY + 20)
+  doc.text(invoice.client.address, rightX + 4, startY + 26)
+  doc.text(invoice.client.city, rightX + 4, startY + 32)
+  doc.text(`Téléphone : ${invoice.client.phone}`, rightX + 4, startY + 38)
+
+  /* ===================================== */
+  /*                 TABLE                 */
+  /* ===================================== */
+
   const tableBody = items.map((p) => [
     p.ref,
     p.dateProduction,
@@ -41,19 +78,40 @@ export function generateInvoicePdf({ invoice, items }) {
   ])
 
   autoTable(doc, {
-    startY: 115,
+    startY: startY + boxHeight + 15,
     head: [['Réf Produit', 'Date', 'Qté planifiée', 'Qté produite', 'COM']],
     body: tableBody,
-    styles: { fontSize: 9 },
-    headStyles: { fillColor: [20, 20, 20] },
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+    },
+    headStyles: {
+      fillColor: [40, 40, 40],
+      textColor: 255,
+      halign: 'center',
+    },
+    alternateRowStyles: {
+      fillColor: [245, 245, 245],
+    },
+    theme: 'grid',
   })
 
-  const y = doc.lastAutoTable.finalY + 15
+  const finalY = doc.lastAutoTable.finalY
+
+  /* ===================================== */
+  /*                FOOTER                 */
+  /* ===================================== */
+
+  doc.setDrawColor(180)
+  doc.line(14, finalY + 10, pageWidth - 14, finalY + 10)
 
   doc.setFontSize(10)
-  doc.text('NOUS VOUS REMERCIONS DE VOTRE CONFIANCE.', 105, y + 25, {
-    align: 'center',
-  })
+  doc.text(
+    'NOUS VOUS REMERCIONS DE VOTRE CONFIANCE.',
+    pageWidth / 2,
+    finalY + 20,
+    { align: 'center' },
+  )
 
   doc.save(`facture_${invoice.factureNumber}.pdf`)
 }
