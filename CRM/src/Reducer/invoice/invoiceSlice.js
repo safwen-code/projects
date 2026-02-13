@@ -12,11 +12,11 @@ const initialState = {
     phone: 'Téléphone',
   },
   client: {
-    name: 'Nom du destinataire',
-    company: 'Nom de l’entreprise',
-    address: 'Adresse postale',
-    city: 'Code postal, Ville',
-    phone: 'Téléphone',
+    name: 'Sofima',
+    company: 'Sofima Filter',
+    address: 'bir el Kasaa',
+    city: '2059, ben arous',
+    phone: '71 380 983',
   },
 }
 
