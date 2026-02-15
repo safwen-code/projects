@@ -1,4 +1,4 @@
-import { createSlice, nanoid } from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit'
 import { fakeProducts } from '../../util/fakeProducts'
 
 const initialState = {
@@ -15,7 +15,7 @@ const productsSlice = createSlice({
       },
       prepare: (data) => ({
         payload: {
-          id: nanoid(),
+          id: data.id,
           ref: data.ref ?? '',
           dateProduction: data.dateProduction ?? '',
           qtyPlanned: Number(data.qtyPlanned ?? 0),
