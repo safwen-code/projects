@@ -7,6 +7,16 @@ import {
   Paper,
   useTheme,
   useMediaQuery,
+  ToggleButton,
+  ToggleButtonGroup,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Typography,
+  Chip,
 } from '@mui/material'
 import { DataGrid, GridRowModes, GridActionsCellItem } from '@mui/x-data-grid'
 import {
@@ -20,29 +30,35 @@ import {
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
-import { useAppSelector } from '../app/hooks'
-// import { useDispatch } from 'react-redux'
+import { useAppSelector, useAppDispatch } from '../app/hooks'
+import { useNavigate } from 'react-redux'
+
+import { setSelectedProducts } from '../Reducer/invoice/invoiceSlice'
 
 const ProductGridMUI = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const products = useAppSelector((state) => state.products.listPrd)
-  console.log(products)
 
   // const dispatch = useDispatch()
-  const [rows, setRows] = useState([
-    { id: 1, client: 'Ali', product: 'Coffee Machine', qty: 2, price: 1200 },
-    { id: 2, client: 'Sami', product: 'Grinder', qty: 1, price: 400 },
-  ])
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
 
+  const [rows, setRows] = useState(products)
   const [rowModesModel, setRowModesModel] = useState({})
-
-  const [rowSelectionModel, setRowSelectionModel] = useState({
+  const [search, setSearch] = useState('')
+  const [docType, setDocType] = useState('')
+  const [selectedIds, setSelectedIds] = useState({
     type: 'include',
     ids: new Set(),
   })
 
-  const [search, setSearch] = useState('')
+  const [openDialog, setOpenDialog] = useState(false)
+  const [snack, setSnack] = useState({
+    open: false,
+    message: '',
+    severity: 'info',
+  })
 
   // 🔎 Search
   const filteredRows = useMemo(() => {
@@ -51,55 +67,44 @@ const ProductGridMUI = () => {
     )
   }, [rows, search])
 
+  const selectedRows = rows.filter((r) => selectedIds.ids.has(r.id))
+
   // ✅ Update row
   const processRowUpdate = (newRow) => {
     setRows((prev) => prev.map((row) => (row.id === newRow.id ? newRow : row)))
     return newRow
   }
 
-  // 🔵 Edit
-  const handleEditClick = (id) => () => {
-    setRowModesModel((prev) => ({
-      ...prev,
-      [id]: { mode: GridRowModes.Edit },
-    }))
-  }
+  // Actions
+  const handleEditClick = (id) => () =>
+    setRowModesModel((prev) => ({ ...prev, [id]: { mode: GridRowModes.Edit } }))
 
-  // 💾 Save
-  const handleSaveClick = (id) => () => {
-    setRowModesModel((prev) => ({
-      ...prev,
-      [id]: { mode: GridRowModes.View },
-    }))
-  }
+  const handleSaveClick = (id) => () =>
+    setRowModesModel((prev) => ({ ...prev, [id]: { mode: GridRowModes.View } }))
 
-  // ❌ Cancel
-  const handleCancelClick = (id) => () => {
+  const handleCancelClick = (id) => () =>
     setRowModesModel((prev) => ({
       ...prev,
       [id]: { mode: GridRowModes.View, ignoreModifications: true },
     }))
-  }
 
-  // 🔴 Delete
-  const handleDeleteClick = (id) => () => {
+  const handleDeleteClick = (id) => () =>
     setRows((prev) => prev.filter((row) => row.id !== id))
-  }
 
   const columns = [
-    { field: 'client', headerName: 'Client', flex: 1, editable: true },
-    { field: 'product', headerName: 'Product', flex: 1, editable: true },
+    { field: 'id', headerName: 'ID', flex: 1 },
+    { field: 'ref', headerName: 'Ref', flex: 1, editable: true },
+    { field: 'dateProduction', headerName: 'Date', flex: 1, editable: true },
     {
-      field: 'qty',
-      headerName: 'Qty',
-      type: 'number',
+      field: 'qtyPlanned',
+      headerName: 'Planned',
       flex: 1,
       editable: true,
+      type: 'number',
     },
     {
-      field: 'price',
-      headerName: 'Price',
-      type: 'number',
+      field: 'qtyProduced',
+      headerName: 'Produced',
       flex: 1,
       editable: true,
     },
@@ -108,41 +113,38 @@ const ProductGridMUI = () => {
       field: 'actions',
       type: 'actions',
       headerName: 'Actions',
-      width: 150,
+      width: 120,
       getActions: ({ id }) => {
-        const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit
-
-        if (isInEditMode) {
-          return [
-            <GridActionsCellItem
-              icon={<Save />}
-              label="Save"
-              onClick={handleSaveClick(id)}
-              sx={{ color: 'green' }}
-            />,
-            <GridActionsCellItem
-              icon={<Close />}
-              label="Cancel"
-              onClick={handleCancelClick(id)}
-              sx={{ color: 'gray' }}
-            />,
-          ]
-        }
-
-        return [
-          <GridActionsCellItem
-            icon={<Edit />}
-            label="Edit"
-            onClick={handleEditClick(id)}
-            sx={{ color: 'blue' }}
-          />,
-          <GridActionsCellItem
-            icon={<Delete />}
-            label="Delete"
-            onClick={handleDeleteClick(id)}
-            sx={{ color: 'red' }}
-          />,
-        ]
+        const isEdit = rowModesModel[id]?.mode === GridRowModes.Edit
+        return isEdit
+          ? [
+              <GridActionsCellItem
+                icon={<Save />}
+                label="Save"
+                sx={{ color: 'green' }}
+                onClick={handleSaveClick(id)}
+              />,
+              <GridActionsCellItem
+                icon={<Close />}
+                label="Cancel"
+                sx={{ color: 'gray' }}
+                onClick={handleCancelClick(id)}
+              />,
+            ]
+          : [
+              <GridActionsCellItem
+                icon={<Edit />}
+                label="Edit"
+                sx={{ color: 'blue' }}
+                onClick={handleEditClick(id)}
+              />,
+              <GridActionsCellItem
+                icon={<Delete />}
+                label="Delete"
+                sx={{ color: 'red' }}
+                onClick={handleDeleteClick(id)}
+              />,
+            ]
       },
     },
   ]
@@ -157,13 +159,26 @@ const ProductGridMUI = () => {
       ...prev,
       [id]: { mode: GridRowModes.Edit },
     }))
+
+    setRowModesModel((prev) => ({ ...prev, [id]: { mode: GridRowModes.Edit } }))
   }
 
-  const handleExportPdf = () => {
-    const selectedRows = rows.filter((r) => rowSelectionModel.ids.has(r.id))
+  const handleExportClick = () => {
+    if (!docType) {
+      setSnack({
+        open: true,
+        message: 'choose type of file  ',
+        severity: 'warning',
+      })
+      return
+    }
 
     if (!selectedRows.length) {
-      alert('Select rows first')
+      setSnack({
+        open: true,
+        message: 'choose element 1',
+        severity: 'warning',
+      })
       return
     }
 
@@ -177,12 +192,18 @@ const ProductGridMUI = () => {
     })
 
     doc.save('report.pdf')
+    setOpenDialog(true)
+  }
+
+  const confirmExport = () => {
+    dispatch(setSelectedProducts({ selectedRows }))
+    navigate('/invoice')
   }
 
   return (
     <Box sx={{ height: '100vh', p: 3, bgcolor: '#f4f6f8' }}>
       <Paper
-        elevation={3}
+        elevation={2}
         sx={{
           height: '100%',
           display: 'flex',
@@ -190,22 +211,42 @@ const ProductGridMUI = () => {
           borderRadius: 3,
         }}
       >
-        {/* 🔵 Toolbar */}
+        {/* Toolbar */}
         <Stack
           direction={isMobile ? 'column' : 'row'}
           spacing={2}
-          sx={{ p: 2 }}
+          alignItems="center"
           justifyContent="space-between"
+          sx={{ p: 2 }}
         >
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={2} alignItems="center">
             <Button variant="contained" startIcon={<Add />} onClick={handleAdd}>
-              Add
+              Ajouter
             </Button>
 
+            <ToggleButtonGroup
+              value={docType}
+              exclusive
+              onChange={(e, value) => setDocType(value)}
+              size="small"
+            >
+              <ToggleButton value="invoice">Facture</ToggleButton>
+              <ToggleButton value="delivery">Bon livraison</ToggleButton>
+            </ToggleButtonGroup>
+
+            {selectedIds.length > 0 && (
+              <Chip
+                label={`${selectedIds.length} sélectionné(s)`}
+                color="primary"
+              />
+            )}
+
             <Button
-              variant="outlined"
+              variant="contained"
+              color="error"
               startIcon={<PictureAsPdf />}
-              onClick={handleExportPdf}
+              disabled={!docType}
+              onClick={handleExportClick}
             >
               Export PDF
             </Button>
@@ -213,14 +254,14 @@ const ProductGridMUI = () => {
 
           <TextField
             size="small"
-            label="Search..."
+            label="Rechercher..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             sx={{ minWidth: 250 }}
           />
         </Stack>
 
-        {/* 🔴 DataGrid */}
+        {/* DataGrid */}
         <Box sx={{ flex: 1 }}>
           <DataGrid
             rows={filteredRows}
@@ -231,24 +272,40 @@ const ProductGridMUI = () => {
             rowModesModel={rowModesModel}
             onRowModesModelChange={setRowModesModel}
             processRowUpdate={processRowUpdate}
-            rowSelectionModel={rowSelectionModel}
-            onRowSelectionModelChange={setRowSelectionModel}
+            rowSelectionModel={selectedIds}
+            onRowSelectionModelChange={(model) => setSelectedIds(model)}
             pageSizeOptions={[5, 10, 20]}
-            initialState={{
-              pagination: {
-                paginationModel: { pageSize: 10, page: 0 },
-              },
-            }}
-            sx={{
-              border: 'none',
-              '& .MuiDataGrid-columnHeaders': {
-                backgroundColor: '#f0f2f5',
-                fontWeight: 'bold',
-              },
-            }}
           />
         </Box>
       </Paper>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>تأكيد التصدير</DialogTitle>
+        <DialogContent>
+          <Typography>
+            هل تريد تصدير {selectedRows.length} عنصر كـ{' '}
+            {docType === 'invoice' ? 'Facture' : 'Bon de livraison'}؟
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>إلغاء</Button>
+          <Button variant="contained" onClick={confirmExport}>
+            تأكيد
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={3000}
+        onClose={() => setSnack({ ...snack, open: false })}
+      >
+        <Alert severity={snack.severity} variant="filled">
+          {snack.message}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }
