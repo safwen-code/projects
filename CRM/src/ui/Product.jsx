@@ -22,7 +22,11 @@ import {
 import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { useNavigate } from 'react-router-dom'
 import { setSelectedProducts } from '../Reducer/invoice/invoiceSlice'
-
+import {
+  addProduct,
+  // updateProduct,
+  // deleteProduct,
+} from '../Reducer/products/productsSlice'
 const ProductGridMUI = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
@@ -31,7 +35,7 @@ const ProductGridMUI = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
 
-  const [rows, setRows] = useState(products)
+  // const [rows, setRows] = useState(products)
 
   const [rowModesModel, setRowModesModel] = useState({})
 
@@ -44,14 +48,15 @@ const ProductGridMUI = () => {
 
   // 🔎 Search
   const filteredRows = useMemo(() => {
-    return rows.filter((row) =>
+    return products.filter((row) =>
       Object.values(row).join(' ').toLowerCase().includes(search.toLowerCase()),
     )
-  }, [rows, search])
+  }, [products, search])
 
   // ✅ Update row
   const processRowUpdate = (newRow) => {
-    setRows((prev) => prev.map((row) => (row.id === newRow.id ? newRow : row)))
+    // setRows((prev) => prev.map((row) => (row.id === newRow.id ? newRow : row)))
+    console.log('update')
     return newRow
   }
 
@@ -81,7 +86,8 @@ const ProductGridMUI = () => {
 
   // 🔴 Delete
   const handleDeleteClick = (id) => () => {
-    setRows((prev) => prev.filter((row) => row.id !== id))
+    // setRows((prev) => prev.filter((row) => row.id !== id))
+    console.log('delete', id)
   }
 
   const columns = [
@@ -153,17 +159,16 @@ const ProductGridMUI = () => {
 
   const handleAdd = () => {
     const id = Date.now()
+    const newProduct = {
+      id,
+      ref: '',
+      dateProduction: '',
+      qtyPlanned: 0,
+      qtyProduced: 0,
+      com: '',
+    }
 
-    setRows((prev) => [
-      {
-        id,
-        ref: '',
-        dateProduction: '',
-        qtyPlanned: 0,
-        qtyProduced: 0,
-      },
-      ...prev,
-    ])
+    dispatch(addProduct(newProduct))
 
     setRowModesModel((prev) => ({
       ...prev,
@@ -172,7 +177,7 @@ const ProductGridMUI = () => {
   }
 
   const handleExportFacture = () => {
-    const selectedRows = rows.filter((r) => rowSelectionModel.ids.has(r.id))
+    const selectedRows = products.filter((r) => rowSelectionModel.ids.has(r.id))
 
     if (!selectedRows.length) {
       alert('Select rows first')
