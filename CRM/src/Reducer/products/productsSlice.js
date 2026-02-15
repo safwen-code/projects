@@ -26,7 +26,7 @@ const productsSlice = createSlice({
     },
 
     updateProduct: (state, action) => {
-      const { id, ...changes } = action.payload // تأكد من إرسال البيانات بشكل صحيح
+      const { id, ...changes } = action.payload
       const existingProduct = state.listPrd.find((p) => p.id === id)
       if (existingProduct) {
         Object.assign(existingProduct, changes)

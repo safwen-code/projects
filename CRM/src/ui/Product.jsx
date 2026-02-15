@@ -15,7 +15,8 @@ import {
   Close,
   Add,
   Delete,
-  PictureAsPdf,
+  Description,
+  LocalShipping,
 } from '@mui/icons-material'
 
 import { useAppDispatch, useAppSelector } from '../app/hooks'
@@ -170,7 +171,7 @@ const ProductGridMUI = () => {
     }))
   }
 
-  const handleExportPdf = () => {
+  const handleExportFacture = () => {
     const selectedRows = rows.filter((r) => rowSelectionModel.ids.has(r.id))
 
     if (!selectedRows.length) {
@@ -180,6 +181,10 @@ const ProductGridMUI = () => {
 
     dispatch(setSelectedProducts(selectedRows))
     navigate('/invoice')
+  }
+
+  const handleExportLivraison = () => {
+    console.log('bondLibvraison')
   }
 
   return (
@@ -206,23 +211,41 @@ const ProductGridMUI = () => {
               Add
             </Button>
 
+            {/* 🔵 Facture */}
             <Button
               variant="outlined"
-              startIcon={<PictureAsPdf />}
-              onClick={handleExportPdf}
+              startIcon={<Description />}
+              sx={{
+                borderColor: '#1976d2',
+                color: '#1976d2',
+              }}
+              onClick={handleExportFacture}
             >
-              Export PDF
+              Facture
+            </Button>
+
+            {/* 🟡 Bon Livraison */}
+            <Button
+              variant="outlined"
+              startIcon={<LocalShipping />}
+              sx={{
+                borderColor: '#fbc02d',
+                color: '#fbc02d',
+              }}
+              onClick={handleExportLivraison}
+            >
+              Bon Livraison
             </Button>
           </Stack>
-
-          <TextField
-            size="small"
-            label="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ minWidth: 250 }}
-          />
         </Stack>
+
+        <TextField
+          size="small"
+          label="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          sx={{ minWidth: 250 }}
+        />
 
         {/* 🔴 DataGrid */}
         <Box sx={{ flex: 1 }}>
