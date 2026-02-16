@@ -11,6 +11,7 @@ import {
 import { useAppDispatch, useAppSelector } from '../app/hooks.js'
 import { setClientInfo } from '../Reducer/invoice/invoiceSlice.js'
 import { generateInvoicePdf } from '../Reducer/invoice/invoicepdf.js'
+import { generateBonLivraisonPdf } from '../Reducer/invoice/BondPdf.js'
 import { useNavigate } from 'react-router-dom'
 
 const Invoice = () => {
@@ -20,7 +21,11 @@ const Invoice = () => {
   const invoice = useAppSelector((s) => s.invoice)
 
   const handlePdf = () => {
-    generateInvoicePdf({ invoice, items: invoice.selectedProductIds })
+    if (invoice.typeDocument === 'facture') {
+      generateInvoicePdf({ invoice, items: invoice.selectedProductIds })
+    } else {
+      generateBonLivraisonPdf({ invoice, items: invoice.selectedProductIds })
+    }
   }
 
   return (
