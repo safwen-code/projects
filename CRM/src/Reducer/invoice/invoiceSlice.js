@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 const initialState = {
+  typeDocument: 'facture',
   selectedProductIds: [],
   factureNumber: 100,
   factureDate: new Date().toISOString().slice(0, 10),
@@ -24,6 +25,9 @@ const invoiceSlice = createSlice({
   name: 'invoice',
   initialState,
   reducers: {
+    setDocumentType: (state, action) => {
+      state.typeDocument = action.payload
+    },
     setSelectedProducts: (state, action) => {
       state.selectedProductIds = action.payload
     },
@@ -38,6 +42,7 @@ const invoiceSlice = createSlice({
 })
 
 export const {
+  setDocumentType,
   setSelectedProducts,
   setClientInfo,
   setFactureMeta,
