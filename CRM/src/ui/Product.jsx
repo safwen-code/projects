@@ -21,7 +21,10 @@ import {
 
 import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { useNavigate } from 'react-router-dom'
-import { setSelectedProducts } from '../Reducer/invoice/invoiceSlice'
+import {
+  setDocumentType,
+  setSelectedProducts,
+} from '../Reducer/invoice/invoiceSlice'
 import {
   addProduct,
   // updateProduct,
@@ -184,12 +187,21 @@ const ProductGridMUI = () => {
       return
     }
 
+    dispatch(setDocumentType('facture'))
     dispatch(setSelectedProducts(selectedRows))
     navigate('/invoice')
   }
 
   const handleExportLivraison = () => {
-    console.log('bondLibvraison')
+    const selectedRows = products.filter((r) => rowSelectionModel.ids.has(r.id))
+
+    if (!selectedRows.length) {
+      alert('Select rows first')
+      return
+    }
+    dispatch(setDocumentType('livraison'))
+    dispatch(setSelectedProducts(selectedRows))
+    navigate('/invoice')
   }
 
   return (
