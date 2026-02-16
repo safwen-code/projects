@@ -32,7 +32,7 @@ const Invoice = () => {
         mb={2}
       >
         <Typography variant="h5" fontWeight={800}>
-          Facture
+          {invoice.typeDocument === 'facture ' ? 'Facture' : 'Bonde Livraison'}
         </Typography>
 
         <Stack direction="row" gap={1}>
@@ -52,11 +52,15 @@ const Invoice = () => {
       <Card sx={{ borderRadius: 3 }}>
         <CardContent>
           <Typography variant="h4" fontWeight={900} align="center">
-            FACTURE
+            {invoice.typeDocument === 'facture' ? 'FACTURE' : 'BONDE LIVRAISON'}
           </Typography>
 
           <Typography align="center" sx={{ opacity: 0.7 }}>
-            FACTURE N° {invoice.factureNumber} — DATE : {invoice.factureDate}
+            {invoice.typeDocument === 'facture'
+              ? `FACTURE N° ${invoice.factureNumber}`
+              : `BL N° ${invoice.factureNumber}`}
+            {' — DATE : '}
+            {invoice.factureDate}
           </Typography>
 
           <Divider sx={{ my: 2 }} />
