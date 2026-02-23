@@ -28,7 +28,8 @@ import {
 import {
   addProduct,
   // updateProduct,
-  // deleteProduct,
+  deleteProduct,
+  updateProduct,
 } from '../Reducer/products/productsSlice'
 const ProductGridMUI = () => {
   const theme = useTheme()
@@ -77,6 +78,7 @@ const ProductGridMUI = () => {
       ...prev,
       [id]: { mode: GridRowModes.View },
     }))
+    dispatch(updateProduct(id, rowModesModel[id].data))
   }
 
   // ❌ Cancel
@@ -90,6 +92,7 @@ const ProductGridMUI = () => {
   // 🔴 Delete
   const handleDeleteClick = (id) => () => {
     // setRows((prev) => prev.filter((row) => row.id !== id))
+    dispatch(deleteProduct(id))
     console.log('delete', id)
   }
 
