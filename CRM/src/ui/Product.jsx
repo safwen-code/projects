@@ -19,6 +19,9 @@ import {
   LocalShipping,
 } from '@mui/icons-material'
 
+import { Typography } from '@mui/material'
+import Inventory2Icon from '@mui/icons-material/Inventory2'
+
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers'
 import dayjs from 'dayjs'
@@ -230,15 +233,53 @@ const ProductGridMUI = () => {
   }
 
   return (
-    <Box sx={{ height: '100vh', p: 3, bgcolor: '#f4f6f8' }}>
+    <Box sx={{ p: 3, bgcolor: '#f4f6f8' }}>
+      {/* typography : title */}
+      <Box
+        sx={{
+          mb: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Inventory2Icon sx={{ color: '#1976d2', fontSize: 35 }} />
+
+          <Box>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                color: '#1976d2',
+              }}
+            >
+              Products & Orders
+            </Typography>
+
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'gray',
+              }}
+            >
+              Manage production, products and generate invoices or delivery
+              notes
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+      {/* typography : title */}
       <Paper
-        elevation={3}
+        elevation={2}
         sx={{
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 3,
           overflow: 'hidden',
+          border: '1px solid #e0e0e0',
+          backgroundColor: 'white',
         }}
       >
         <Stack
@@ -248,24 +289,41 @@ const ProductGridMUI = () => {
           justifyContent="space-between"
         >
           <Stack direction="row" spacing={1}>
-            <Button variant="contained" startIcon={<Add />} onClick={handleAdd}>
-              Add
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={handleAdd}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+              }}
+            >
+              Add Product
             </Button>
-
             <Button
               variant="outlined"
               startIcon={<Description />}
               onClick={handleExportFacture}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+              }}
             >
-              Facture
+              Generate Invoice
             </Button>
-
             <Button
               variant="outlined"
               startIcon={<LocalShipping />}
               onClick={handleExportLivraison}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+              }}
             >
-              Bon Livraison
+              Delivery Note
             </Button>
           </Stack>
 
