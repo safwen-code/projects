@@ -40,7 +40,7 @@ const GlobalDrawer = () => {
     {
       text: 'Factures',
       icon: <ReceiptLongIcon />,
-      path: '/invoice',
+      path: '/invoices',
     },
   ]
 
