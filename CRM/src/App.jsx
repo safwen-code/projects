@@ -4,6 +4,8 @@ import Product from './ui/Product'
 import Invoice from './ui/Invoice'
 import ProtectedRoute from './ui/ProtectedRoute'
 import GlobalDrawer from './ui/GlobalDrawer'
+import Clients from './ui/Clients'
+import Invoices from './ui/Invoices'
 
 const App = () => {
   const location = useLocation()
@@ -28,6 +30,22 @@ const App = () => {
           element={
             <ProtectedRoute>
               <Invoice />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/clients"
+          element={
+            <ProtectedRoute>
+              <Clients />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/invoices"
+          element={
+            <ProtectedRoute>
+              <Invoices />
             </ProtectedRoute>
           }
         />
