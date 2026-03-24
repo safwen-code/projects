@@ -7,201 +7,269 @@ import {
   Paper,
   useTheme,
   useMediaQuery,
-  ToggleButton,
-  ToggleButtonGroup,
-  Snackbar,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Typography,
-  Chip,
 } from '@mui/material'
 import { DataGrid, GridRowModes, GridActionsCellItem } from '@mui/x-data-grid'
 import {
-  Add,
-  Delete,
   Edit,
   Save,
   Close,
-  PictureAsPdf,
+  Add,
+  Delete,
+  Description,
+  LocalShipping,
 } from '@mui/icons-material'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 
-import { useAppSelector, useAppDispatch } from '../app/hooks'
-import { useNavigate } from 'react-redux'
+import { Typography } from '@mui/material'
+import Inventory2Icon from '@mui/icons-material/Inventory2'
 
-import { setSelectedProducts } from '../Reducer/invoice/invoiceSlice'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers'
+import dayjs from 'dayjs'
+
+import { useAppDispatch, useAppSelector } from '../app/hooks'
+import { useNavigate } from 'react-router-dom'
+import {
+  setDocumentType,
+  setSelectedProducts,
+} from '../Reducer/invoice/invoiceSlice'
+import {
+  addProduct,
+  deleteProduct,
+  updateProduct,
+} from '../Reducer/products/productsSlice'
 
 const ProductGridMUI = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const products = useAppSelector((state) => state.products.listPrd)
 
-  // const dispatch = useDispatch()
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
 
-  const [rows, setRows] = useState(products)
   const [rowModesModel, setRowModesModel] = useState({})
-  const [search, setSearch] = useState('')
-  const [docType, setDocType] = useState('')
-  const [selectedIds, setSelectedIds] = useState({
+  const [rowSelectionModel, setRowSelectionModel] = useState({
     type: 'include',
     ids: new Set(),
   })
-
-  const [openDialog, setOpenDialog] = useState(false)
-  const [snack, setSnack] = useState({
-    open: false,
-    message: '',
-    severity: 'info',
-  })
+  const [search, setSearch] = useState('')
 
   // 🔎 Search
   const filteredRows = useMemo(() => {
-    return rows.filter((row) =>
+    return products.filter((row) =>
       Object.values(row).join(' ').toLowerCase().includes(search.toLowerCase()),
     )
-  }, [rows, search])
+  }, [products, search])
 
-  const selectedRows = rows.filter((r) => selectedIds.ids.has(r.id))
-
-  // ✅ Update row
+  // ✅ UPDATE
   const processRowUpdate = (newRow) => {
-    setRows((prev) => prev.map((row) => (row.id === newRow.id ? newRow : row)))
+    dispatch(updateProduct(newRow))
     return newRow
   }
 
-  // Actions
-  const handleEditClick = (id) => () =>
-    setRowModesModel((prev) => ({ ...prev, [id]: { mode: GridRowModes.Edit } }))
+  const handleEditClick = (id) => () => {
+    setRowModesModel((prev) => ({
+      ...prev,
+      [id]: { mode: GridRowModes.Edit },
+    }))
+  }
 
-  const handleSaveClick = (id) => () =>
-    setRowModesModel((prev) => ({ ...prev, [id]: { mode: GridRowModes.View } }))
+  const handleSaveClick = (id) => () => {
+    setRowModesModel((prev) => ({
+      ...prev,
+      [id]: { mode: GridRowModes.View },
+    }))
+  }
 
-  const handleCancelClick = (id) => () =>
+  const handleCancelClick = (id) => () => {
     setRowModesModel((prev) => ({
       ...prev,
       [id]: { mode: GridRowModes.View, ignoreModifications: true },
     }))
+  }
 
-  const handleDeleteClick = (id) => () =>
-    setRows((prev) => prev.filter((row) => row.id !== id))
+  const handleDeleteClick = (id) => () => {
+    dispatch(deleteProduct(id))
+  }
 
   const columns = [
     { field: 'id', headerName: 'ID', flex: 1 },
+
     { field: 'ref', headerName: 'Ref', flex: 1, editable: true },
-    { field: 'dateProduction', headerName: 'Date', flex: 1, editable: true },
+
+    {
+      field: 'dateProduction',
+      headerName: 'Date Production',
+      flex: 1,
+      editable: true,
+      renderEditCell: (params) => (
+        <DatePicker
+          value={params.value ? dayjs(params.value) : null}
+          onChange={(newValue) => {
+            params.api.setEditCellValue({
+              id: params.id,
+              field: 'dateProduction',
+              value: newValue ? newValue.format('DD.MM.YYYY') : '',
+            })
+          }}
+          slotProps={{ textField: { size: 'small' } }}
+        />
+      ),
+    },
+
     {
       field: 'qtyPlanned',
-      headerName: 'Planned',
+      headerName: 'Qty Planned',
       flex: 1,
       editable: true,
       type: 'number',
     },
+
     {
       field: 'qtyProduced',
-      headerName: 'Produced',
+      headerName: 'Qty Produced',
       flex: 1,
       editable: true,
+      type: 'number',
+    },
+
+    {
+      field: 'com',
+      headerName: 'Commentaire',
+      flex: 1,
+      editable: true,
+    },
+
+    {
+      field: 'user',
+      headerName: 'User',
+      flex: 1,
+      editable: true,
+      type: 'singleSelect',
+      valueOptions: ['hfactory', 'sofime'],
     },
 
     {
       field: 'actions',
       type: 'actions',
       headerName: 'Actions',
-      width: 120,
+      width: 130,
       getActions: ({ id }) => {
-        const isEdit = rowModesModel[id]?.mode === GridRowModes.Edit
-        return isEdit
-          ? [
-              <GridActionsCellItem
-                icon={<Save />}
-                label="Save"
-                sx={{ color: 'green' }}
-                onClick={handleSaveClick(id)}
-              />,
-              <GridActionsCellItem
-                icon={<Close />}
-                label="Cancel"
-                sx={{ color: 'gray' }}
-                onClick={handleCancelClick(id)}
-              />,
-            ]
-          : [
-              <GridActionsCellItem
-                icon={<Edit />}
-                label="Edit"
-                sx={{ color: 'blue' }}
-                onClick={handleEditClick(id)}
-              />,
-              <GridActionsCellItem
-                icon={<Delete />}
-                label="Delete"
-                sx={{ color: 'red' }}
-                onClick={handleDeleteClick(id)}
-              />,
-            ]
+        const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit
+
+        if (isInEditMode) {
+          return [
+            <GridActionsCellItem
+              icon={<Save />}
+              label="Save"
+              onClick={handleSaveClick(id)}
+              sx={{ color: 'green' }}
+            />,
+            <GridActionsCellItem
+              icon={<Close />}
+              label="Cancel"
+              onClick={handleCancelClick(id)}
+              sx={{ color: 'gray' }}
+            />,
+          ]
+        }
+
+        return [
+          <GridActionsCellItem
+            icon={<Edit />}
+            label="Edit"
+            onClick={handleEditClick(id)}
+            sx={{ color: 'blue' }}
+          />,
+          <GridActionsCellItem
+            icon={<Delete />}
+            label="Delete"
+            onClick={handleDeleteClick(id)}
+            sx={{ color: 'red' }}
+          />,
+        ]
       },
     },
   ]
 
   const handleAdd = () => {
     const id = Date.now()
-    setRows((prev) => [
-      { id, client: '', product: '', qty: 0, price: 0 },
-      ...prev,
-    ])
+
+    dispatch(
+      addProduct({
+        id,
+        ref: '',
+        dateProduction: '',
+        qtyPlanned: 0,
+        qtyProduced: 0,
+        com: '',
+        user: '',
+      }),
+    )
+
     setRowModesModel((prev) => ({
       ...prev,
       [id]: { mode: GridRowModes.Edit },
     }))
-
-    setRowModesModel((prev) => ({ ...prev, [id]: { mode: GridRowModes.Edit } }))
   }
 
-  const handleExportClick = () => {
-    if (!docType) {
-      setSnack({
-        open: true,
-        message: 'choose type of file  ',
-        severity: 'warning',
-      })
-      return
-    }
+  const handleExportFacture = () => {
+    const selectedRows = products.filter((r) => rowSelectionModel.ids.has(r.id))
 
-    if (!selectedRows.length) {
-      setSnack({
-        open: true,
-        message: 'choose element 1',
-        severity: 'warning',
-      })
-      return
-    }
+    if (!selectedRows.length) return alert('Select rows first')
 
-    const doc = new jsPDF()
-    doc.text('Client Report', 14, 15)
-
-    autoTable(doc, {
-      startY: 20,
-      head: [['Client', 'Product', 'Qty', 'Price']],
-      body: selectedRows.map((r) => [r.client, r.product, r.qty, r.price]),
-    })
-
-    doc.save('report.pdf')
-    setOpenDialog(true)
+    dispatch(setDocumentType('facture'))
+    dispatch(setSelectedProducts(selectedRows))
+    navigate('/invoice')
   }
 
-  const confirmExport = () => {
-    dispatch(setSelectedProducts({ selectedRows }))
+  const handleExportLivraison = () => {
+    const selectedRows = products.filter((r) => rowSelectionModel.ids.has(r.id))
+
+    if (!selectedRows.length) return alert('Select rows first')
+
+    dispatch(setDocumentType('livraison'))
+    dispatch(setSelectedProducts(selectedRows))
     navigate('/invoice')
   }
 
   return (
-    <Box sx={{ height: '100vh', p: 3, bgcolor: '#f4f6f8' }}>
+    <Box sx={{ p: 3, bgcolor: '#f4f6f8' }}>
+      {/* typography : title */}
+      <Box
+        sx={{
+          mb: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Inventory2Icon sx={{ color: '#1976d2', fontSize: 35 }} />
+
+          <Box>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                color: '#1976d2',
+              }}
+            >
+              Products & Orders
+            </Typography>
+
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'gray',
+              }}
+            >
+              Manage production, products and generate invoices or delivery
+              notes
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+      {/* typography : title */}
       <Paper
         elevation={2}
         sx={{
@@ -209,103 +277,87 @@ const ProductGridMUI = () => {
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 3,
+          overflow: 'hidden',
+          border: '1px solid #e0e0e0',
+          backgroundColor: 'white',
         }}
       >
-        {/* Toolbar */}
         <Stack
           direction={isMobile ? 'column' : 'row'}
           spacing={2}
-          alignItems="center"
-          justifyContent="space-between"
           sx={{ p: 2 }}
+          justifyContent="space-between"
         >
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Button variant="contained" startIcon={<Add />} onClick={handleAdd}>
-              Ajouter
-            </Button>
-
-            <ToggleButtonGroup
-              value={docType}
-              exclusive
-              onChange={(e, value) => setDocType(value)}
-              size="small"
-            >
-              <ToggleButton value="invoice">Facture</ToggleButton>
-              <ToggleButton value="delivery">Bon livraison</ToggleButton>
-            </ToggleButtonGroup>
-
-            {selectedIds.length > 0 && (
-              <Chip
-                label={`${selectedIds.length} sélectionné(s)`}
-                color="primary"
-              />
-            )}
-
+          <Stack direction="row" spacing={1}>
             <Button
               variant="contained"
-              color="error"
-              startIcon={<PictureAsPdf />}
-              disabled={!docType}
-              onClick={handleExportClick}
+              startIcon={<Add />}
+              onClick={handleAdd}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+              }}
             >
-              Export PDF
+              Add Product
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Description />}
+              onClick={handleExportFacture}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+              }}
+            >
+              Generate Invoice
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<LocalShipping />}
+              onClick={handleExportLivraison}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+              }}
+            >
+              Delivery Note
             </Button>
           </Stack>
 
           <TextField
             size="small"
-            label="Rechercher..."
+            label="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            sx={{ minWidth: 250 }}
           />
         </Stack>
 
-        {/* DataGrid */}
-        <Box sx={{ flex: 1 }}>
-          <DataGrid
-            rows={filteredRows}
-            columns={columns}
-            checkboxSelection
-            disableRowSelectionOnClick
-            editMode="row"
-            rowModesModel={rowModesModel}
-            onRowModesModelChange={setRowModesModel}
-            processRowUpdate={processRowUpdate}
-            rowSelectionModel={selectedIds}
-            onRowSelectionModelChange={(model) => setSelectedIds(model)}
-            pageSizeOptions={[5, 10, 20]}
-          />
-        </Box>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <Box sx={{ flex: 1 }}>
+            <DataGrid
+              rows={filteredRows}
+              columns={columns}
+              checkboxSelection
+              disableRowSelectionOnClick
+              editMode="row"
+              rowModesModel={rowModesModel}
+              onRowModesModelChange={setRowModesModel}
+              processRowUpdate={processRowUpdate}
+              rowSelectionModel={rowSelectionModel}
+              onRowSelectionModelChange={(model) => setRowSelectionModel(model)}
+              pageSizeOptions={[5, 10, 20]}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 10, page: 0 },
+                },
+              }}
+            />
+          </Box>
+        </LocalizationProvider>
       </Paper>
-
-      {/* Confirmation Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>تأكيد التصدير</DialogTitle>
-        <DialogContent>
-          <Typography>
-            هل تريد تصدير {selectedRows.length} عنصر كـ{' '}
-            {docType === 'invoice' ? 'Facture' : 'Bon de livraison'}؟
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>إلغاء</Button>
-          <Button variant="contained" onClick={confirmExport}>
-            تأكيد
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Snackbar */}
-      <Snackbar
-        open={snack.open}
-        autoHideDuration={3000}
-        onClose={() => setSnack({ ...snack, open: false })}
-      >
-        <Alert severity={snack.severity} variant="filled">
-          {snack.message}
-        </Alert>
-      </Snackbar>
     </Box>
   )
 }
